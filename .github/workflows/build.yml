@@ -1,0 +1,66 @@
+name: Build APK
+
+# Builds the APK from the source in this repository on GitHub's own servers,
+# so anyone can verify the published APK matches the code they can read here.
+#  - every push / pull request: build only (checks the project compiles)
+#  - pushing a tag like v1.0.0: also publishes a GitHub Release with the APK,
+#    a SHA-256 checksum and a build-provenance attestation
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # create the GitHub Release
+      id-token: write        # build attestation
+      attestations: write    # build attestation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+
+      - name: Name the APK and compute checksum
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk dist/cor3-helper.apk
+          cd dist
+          sha256sum cor3-helper.apk | tee cor3-helper.apk.sha256
+
+      - name: Attest build provenance
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/cor3-helper.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cor3-helper-apk
+          path: dist/*
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/cor3-helper.apk
+            dist/cor3-helper.apk.sha256
+          generate_release_notes: true

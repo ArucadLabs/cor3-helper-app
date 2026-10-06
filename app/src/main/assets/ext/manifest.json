@@ -1,0 +1,91 @@
+{
+  "manifest_version": 3,
+  "name": "COR3 Helper",
+  "version": "1.7.0.2",
+  "description": "Monitor markets, expeditions, daily ops, and get timer alerts for cor3.gg.",
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://cor3.gg/*",
+    "https://os.cor3.gg/*",
+    "https://svc-corie.cor3.gg/*",
+    "https://raw.githubusercontent.com/*"
+  ],
+  "background": {
+    "scripts": [
+      "console-logger.js",
+      "errors.js",
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cor3.gg/*",
+        "https://os.cor3.gg/*"
+      ],
+      "js": [
+        "console-logger.js",
+        "notepack.min.js",
+        "msgpack-codec.js",
+        "content-early.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://cor3.gg/*",
+        "https://os.cor3.gg/*"
+      ],
+      "js": [
+        "console-logger.js",
+        "errors.js",
+        "ws-messages.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icon/favicon16.png",
+    "48": "icon/favicon48.png",
+    "128": "icon/favicon128.png"
+  },
+  "action": {
+    "default_icon": "icon/favicon128.png",
+    "default_popup": "popup.html",
+    "default_title": "COR3 Helper"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "msgpack-codec.js",
+        "ws-interceptor.js",
+        "decrypt-solver.js",
+        "daily-hack-solver.js",
+        "auto-job-solver.js",
+        "auto-valuable-seller.js",
+        "ice-wall-solver.js",
+        "simple-decrypt-solver.js",
+        "devtools-log-viewer.html",
+        "devtools-log-viewer.js"
+      ],
+      "matches": [
+        "https://cor3.gg/*",
+        "https://os.cor3.gg/*"
+      ]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "cor3-helper-android@local",
+      "strict_min_version": "128.0"
+    }
+  }
+}

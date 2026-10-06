@@ -1,0 +1,21 @@
+# Build output and caches
+build/
+app/build/
+.gradle/
+.kotlin/
+*.apk
+*.aab
+
+# Machine-specific / IDE
+local.properties
+.idea/
+*.iml
+
+# Never commit signing keys or secrets
+*.jks
+*.keystore
+keystore.properties
+.env
+
+# IDE-generated, pins a specific JDK vendor/version
+gradle/gradle-daemon-jvm.properties
