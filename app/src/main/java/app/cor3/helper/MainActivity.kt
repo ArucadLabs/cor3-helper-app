@@ -1,6 +1,7 @@
 package app.cor3.helper
 
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -51,10 +52,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        // Remote debugging exposes the page (including the login token) to anyone with adb access,
+        // so it is only on for debuggable builds (Android Studio "Run"), never in release APKs.
+        val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         val rt = runtime ?: GeckoRuntime.create(
             this,
             GeckoRuntimeSettings.Builder()
-                .remoteDebuggingEnabled(true)   // lets you inspect via about:debugging on a PC if needed
+                .remoteDebuggingEnabled(isDebuggable)   // lets you inspect via about:debugging on a PC in debug builds
                 .consoleOutput(true)
                 .build()
         ).also { runtime = it }

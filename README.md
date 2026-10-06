@@ -18,6 +18,16 @@ The extension is limited to `cor3.gg`, `os.cor3.gg`, `svc-corie.cor3.gg` and `ra
 (see `app/src/main/assets/ext/manifest.json`). Your game login stays in the app on your phone; nothing is
 sent anywhere else by this project's code.
 
+## Privacy and security
+
+- **Your password** is typed into cor3.gg itself, inside the embedded browser. This project has no code that reads or stores it, and it never reads cookies.
+- **The game login token** is captured by the extension and kept in the extension's storage inside the app's private data, so it can call the game's daily-ops API. It is sent only back to `svc-corie.cor3.gg`. It is not encrypted at rest, which is normal for browsers, but means a rooted phone or malware with root could read it.
+- **Network:** the code only contacts `cor3.gg`, `os.cor3.gg`, `svc-corie.cor3.gg`, `cdn.cor3.gg` and `raw.githubusercontent.com` (a read-only version check against the upstream repo). No analytics, no tracking, no other servers. You can check this yourself with a search for `fetch(` in `app/src/main/assets/ext/`.
+- **Remote debugging** is disabled in release builds, so the APKs on the Releases page can't be inspected over adb. It is only on for debug builds made from Android Studio.
+- **Backups:** Android cloud/device backup is disabled for the app (`allowBackup=false`), so the token doesn't end up in a backup.
+- **Logs may contain job and server details.** Don't post screenshots of the Logs tab unless you've looked at them first.
+- Use your own account, and only install APKs from this repository's Releases page (verify the checksum, see below).
+
 ## Verify the APK you download
 
 Releases are built automatically by [GitHub Actions](.github/workflows/build.yml) from the code in this
@@ -28,7 +38,7 @@ repository, not on a personal computer.
 2. Check the checksum (Windows PowerShell): `(Get-FileHash cor3-helper.apk -Algorithm SHA256).Hash`
    and compare it with the value in the `.sha256` file.
 3. Optional, proves it was built by this repo's workflow (needs the [GitHub CLI](https://cli.github.com/)):
-   `gh attestation verify cor3-helper.apk --repo <owner>/<repo>`
+   `gh attestation verify cor3-helper.apk --repo ArucadLabs/cor3-helper-app`
 
 Or build it yourself (needs Android Studio / JDK 17+):
 
