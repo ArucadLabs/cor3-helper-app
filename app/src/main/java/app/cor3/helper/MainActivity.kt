@@ -1,18 +1,14 @@
 package app.cor3.helper
 
-import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.PowerManager
-import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
@@ -108,7 +104,6 @@ class MainActivity : AppCompatActivity() {
 
         buildLayout()
         installExtensionThenLoad(rt)
-        requestBatteryExemptionOnce()
     }
 
     private fun buildLayout() {
@@ -264,21 +259,20 @@ class MainActivity : AppCompatActivity() {
         helperUrl?.let { helperSession.loadUri(it) }
     }
 
-    private fun requestBatteryExemptionOnce() {
-        val prefs = getSharedPreferences("app", MODE_PRIVATE)
-        if (prefs.getBoolean("asked_battery", false)) return
-        prefs.edit().putBoolean("asked_battery", true).apply()
-        val pm = getSystemService(POWER_SERVICE) as PowerManager
-        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-            try {
-                startActivity(
-                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                        .setData(Uri.parse("package:$packageName"))
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "battery exemption prompt failed", e)
-            }
-        }
+    // The app does nothing in the background: when it leaves the screen (another app, screen off) both
+    // sessions are marked inactive, so the game page stops animating and its timers are throttled by the
+    // web engine. They are woken again as soon as the app is visible. (A running automation therefore
+    // only makes progress while the app is on screen.)
+    override fun onStart() {
+        super.onStart()
+        gameSession.setActive(true)
+        helperSession.setActive(true)
+    }
+
+    override fun onStop() {
+        gameSession.setActive(false)
+        helperSession.setActive(false)
+        super.onStop()
     }
 
     @Deprecated("Deprecated in Java")

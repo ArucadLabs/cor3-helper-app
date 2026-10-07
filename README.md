@@ -11,9 +11,10 @@ Android Chrome cannot load extensions.
 
 - Shows the game (`https://cor3.gg/`) in one GeckoView and the helper's popup in another, switched with the top bar.
 - Loads the bundled extension into the game page so its automation works.
-- Keeps the screen on and asks once to be exempt from battery optimisation so it can keep running.
+- Keeps the screen on while the app is open.
+- Does nothing in the background: when you leave the app or the screen turns off, the game and the helper are paused (and Android manages the app normally), so it doesn't drain the battery. Automations only make progress while the app is on screen.
 
-It requests only: `INTERNET`, `ACCESS_NETWORK_STATE`, `WAKE_LOCK`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`.
+It requests only: `INTERNET`, `ACCESS_NETWORK_STATE`, `WAKE_LOCK` (plus two small audio/sensor permissions added by the GeckoView engine).
 The extension is limited to `cor3.gg`, `os.cor3.gg`, `svc-corie.cor3.gg` and `raw.githubusercontent.com`
 (see `app/src/main/assets/ext/manifest.json`). Your game login stays in the app on your phone; nothing is
 sent anywhere else by this project's code.
