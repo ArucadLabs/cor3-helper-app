@@ -72,6 +72,19 @@ def main():
     bg_path.write_text(bg_text, encoding="utf-8")
     m["background"] = {"scripts": imports + [bg_file]}
 
+    # ---- Android-only bridge: tells the app when the game's own loader is on screen ----
+    # (tools/android-bridge/*.js; talks to the app through native messaging, nothing else)
+    bridge_dir = Path(__file__).resolve().parent / "android-bridge"
+    for f in ("app-bridge.js", "app-bridge-bg.js"):
+        shutil.copy2(bridge_dir / f, out / f)
+    # geckoViewAddons is what makes GeckoView route native messages to the app's MessageDelegate;
+    # without it Gecko tries desktop native manifests and fails ("Native manifests are not supported on android").
+    m["permissions"] += ["nativeMessaging", "geckoViewAddons"]
+    m["background"]["scripts"].append("app-bridge-bg.js")
+    cs_matches = sorted({h for cs in m.get("content_scripts", []) for h in cs.get("matches", [])})
+    m.setdefault("content_scripts", []).append(
+        {"matches": cs_matches, "js": ["app-bridge.js"], "run_at": "document_start"})
+
     # tighten web_accessible_resources (<all_urls> is not needed)
     hosts = sorted({h for cs in m.get("content_scripts", []) for h in cs.get("matches", [])})
     for war in m.get("web_accessible_resources", []):

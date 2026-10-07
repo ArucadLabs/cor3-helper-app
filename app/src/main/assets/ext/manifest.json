@@ -1,14 +1,16 @@
 {
   "manifest_version": 3,
   "name": "COR3 Helper",
-  "version": "1.7.0.2",
+  "version": "1.7.0.6",
   "description": "Monitor markets, expeditions, daily ops, and get timer alerts for cor3.gg.",
   "permissions": [
     "storage",
     "scripting",
     "activeTab",
     "tabs",
-    "alarms"
+    "alarms",
+    "nativeMessaging",
+    "geckoViewAddons"
   ],
   "host_permissions": [
     "https://cor3.gg/*",
@@ -20,7 +22,8 @@
     "scripts": [
       "console-logger.js",
       "errors.js",
-      "background.js"
+      "background.js",
+      "app-bridge-bg.js"
     ]
   },
   "content_scripts": [
@@ -50,6 +53,16 @@
         "content.js"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://cor3.gg/*",
+        "https://os.cor3.gg/*"
+      ],
+      "js": [
+        "app-bridge.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "icons": {

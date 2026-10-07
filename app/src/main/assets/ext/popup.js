@@ -5570,14 +5570,60 @@
     debugLogsBody.replaceChildren(frag);
     debugLogsBody.scrollTop = debugLogsBody.scrollHeight;
   }
+  // A job's Done/Failed/Skipped status only lives until its market resets (new jobs, new ids).
+  var JOB_FINAL_STATUSES = ["done", "failed", "skipped", "bugged"];
+  function lastMarketResetMs(md, marketKey) {
+    if (!md || !md.nextJobsResetAt) return null;
+    const next = new Date(md.nextJobsResetAt).getTime();
+    const dur = MARKET_RESET_DURATIONS_MS[marketKey];
+    if (isNaN(next) || !dur) return null;
+    const now = Date.now();
+    if (next > now) return next - dur;
+    return next + Math.floor((now - next) / dur) * dur;
+  }
+  function pruneStaleJobStatuses(tracker, completed, markets) {
+    const now = Date.now();
+    const resets = {};
+    for (const k of Object.keys(markets)) resets[k] = lastMarketResetMs(markets[k], k);
+    const isStale = (marketKey, ts) => resets[marketKey] != null && !!ts && ts < resets[marketKey];
+    let changed = false;
+    const keptTracker = [];
+    for (const j of tracker) {
+      if (JOB_FINAL_STATUSES.includes(j.status)) {
+        if (!j.finishedAt) {
+          j.finishedAt = now;
+          changed = true;
+        } else if (isStale(j.marketKey || "home", j.finishedAt)) {
+          changed = true;
+          continue;
+        }
+      }
+      keptTracker.push(j);
+    }
+    const keptCompleted = completed.filter((j) => {
+      if (isStale(j.marketKey || "home", j.completedAt)) {
+        changed = true;
+        return false;
+      }
+      return true;
+    });
+    return { tracker: keptTracker, completed: keptCompleted, changed };
+  }
   var _renderDebugJobsId = 0;
   async function renderDebugJobs() {
     const renderId = ++_renderDebugJobsId;
     const storageData = await chrome.storage.local.get(["autoJobsCompletedResults", "marketData", "darkMarketData", "soyuzMarketData", "usolMarketData", "autoJobsTracker"]);
     if (renderId !== _renderDebugJobsId) return;
-    const { autoJobsCompletedResults, marketData, darkMarketData, soyuzMarketData, usolMarketData } = storageData;
-    if (storageData.autoJobsTracker) {
-      autoJobsTracker = storageData.autoJobsTracker;
+    const { marketData, darkMarketData, soyuzMarketData, usolMarketData } = storageData;
+    const pruned = pruneStaleJobStatuses(
+      Array.isArray(storageData.autoJobsTracker) ? storageData.autoJobsTracker : autoJobsTracker,
+      Array.isArray(storageData.autoJobsCompletedResults) ? storageData.autoJobsCompletedResults : [],
+      { home: marketData, dark: darkMarketData, soyuz: soyuzMarketData, usol: usolMarketData }
+    );
+    const autoJobsCompletedResults = pruned.completed;
+    autoJobsTracker = pruned.tracker;
+    if (pruned.changed) {
+      chrome.storage.local.set({ autoJobsTracker: pruned.tracker, autoJobsCompletedResults: pruned.completed });
     }
     const completedMap = {};
     if (autoJobsCompletedResults) {
@@ -5804,6 +5850,9 @@
       if (autoJobSolverToggle.checked) renderAutoJobsTabs();
     }
   });
+  setInterval(() => {
+    if (autoJobsDebugToggle.checked) renderDebugJobs();
+  }, 6e4);
   chrome.storage.local.get(["autoJobsDebugLogs", "autoJobsTracker", "autoJobsRunning"], (data) => {
     if (data.autoJobsDebugLogs) {
       autoJobsDebugLogs = data.autoJobsDebugLogs;

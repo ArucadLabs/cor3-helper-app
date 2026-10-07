@@ -1202,6 +1202,15 @@
     return idx >= 0 ? idx : JOB_TYPE_PRIORITY.length;
   }
   function updateTracker() {
+    var finalStatuses = ["done", "failed", "skipped", "bugged"];
+    for (var ti = 0; ti < state.jobQueue.length; ti++) {
+      var tj = state.jobQueue[ti];
+      if (finalStatuses.indexOf(tj.status) >= 0) {
+        if (!tj.finishedAt) tj.finishedAt = Date.now();
+      } else if (tj.finishedAt) {
+        delete tj.finishedAt;
+      }
+    }
     window.postMessage({ type: "COR3_AUTOJOB_TRACKER_UPDATE", tracker: state.jobQueue }, "*");
   }
   function saveCompletedResultsIncremental() {
