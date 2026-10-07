@@ -97,3 +97,5 @@ jobs:
             dist/cor3-helper.apk.sha256
             dist/cor3-helper.signing-cert.txt
           generate_release_notes: true
+          # a tag with a suffix like v1.0.3-lite is a test build, not the "latest" release
+          prerelease: ${{ contains(github.ref_name, '-') }}

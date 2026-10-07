@@ -19,6 +19,14 @@ The extension is limited to `cor3.gg`, `os.cor3.gg`, `svc-corie.cor3.gg` and `ra
 (see `app/src/main/assets/ext/manifest.json`). Your game login stays in the app on your phone; nothing is
 sent anywhere else by this project's code.
 
+## Lite test build
+
+Releases tagged like `v1.0.3-lite` (published as pre-releases) come from the `lite` branch. They remove the
+game's seven decorative grain videos (`noise.mp4`) from the intro, which cuts the number of videos decoding at
+once from about 11 to about 4. This is meant for phones that show a black screen during the intro (the intro
+stacks three 4K videos plus the grain overlays, which can exhaust a mid-range phone's hardware video decoders).
+The only visible difference is a slightly cleaner, grain-free background.
+
 ## Privacy and security
 
 - **Your password** is typed into cor3.gg itself, inside the embedded browser. This project has no code that reads or stores it, and it never reads cookies.

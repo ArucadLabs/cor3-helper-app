@@ -9,7 +9,8 @@ val geckoviewVersion: String by project
 val appVersionName: String by project   // e.g. 1.0.2 (set in gradle.properties; must match the release tag)
 
 // versionCode = major*10000 + minor*100 + patch, so every new release is an upgrade for Android.
-val appVersionCode = appVersionName.split(".").let { p ->
+// A suffix such as "-lite" (test builds) is ignored for the number.
+val appVersionCode = appVersionName.substringBefore("-").split(".").let { p ->
     p[0].toInt() * 10000 + p.getOrElse(1) { "0" }.toInt() * 100 + p.getOrElse(2) { "0" }.toInt()
 }
 
