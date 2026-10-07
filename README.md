@@ -47,9 +47,13 @@ Or build it yourself (needs Android Studio / JDK 17+):
 ./gradlew assembleRelease      # Windows: .\gradlew.bat assembleRelease
 ```
 
-The APK is signed with a standard Android debug key, which is fine for sideloading but means a locally built
-copy and a GitHub-built copy have different signatures. Uninstall one before installing the other.
-ARM64 phones only.
+Every release is signed with the same release key (stored in GitHub Secrets), so a new release installs over
+the previous one and keeps your game login. The signing certificate's fingerprint is published with each
+release (`cor3-helper.signing-cert.txt`); it must be identical across releases. Your own local builds use the
+debug key unless you provide a `keystore.properties`, so they can't update over a GitHub release: uninstall one
+before installing the other. ARM64 phones only.
+
+Releasing (maintainer): bump `appVersionName` in `gradle.properties`, commit, then push a tag `v<that version>`.
 
 ## What was changed from the original extension
 

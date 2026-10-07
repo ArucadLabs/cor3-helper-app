@@ -3,8 +3,11 @@ name: Build APK
 # Builds the APK from the source in this repository on GitHub's own servers,
 # so anyone can verify the published APK matches the code they can read here.
 #  - every push / pull request: build only (checks the project compiles)
-#  - pushing a tag like v1.0.0: also publishes a GitHub Release with the APK,
-#    a SHA-256 checksum and a build-provenance attestation
+#  - pushing a tag like v1.0.2: also publishes a GitHub Release with the APK,
+#    a SHA-256 checksum, the signing-certificate fingerprint and a build-provenance attestation
+#
+# Release APKs are signed with a fixed release key stored in GitHub Secrets
+# (KEYSTORE_BASE64, KEYSTORE_PASSWORD), so every release installs over the previous one.
 
 on:
   push:
@@ -23,8 +26,33 @@ jobs:
       contents: write        # create the GitHub Release
       id-token: write        # build attestation
       attestations: write    # build attestation
+    env:
+      KEY_ALIAS: cor3helper
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check the tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          v=$(grep '^appVersionName=' gradle.properties | cut -d= -f2 | tr -d '\r')
+          if [ "refs/tags/v$v" != "$GITHUB_REF" ]; then
+            echo "::error::Tag $GITHUB_REF does not match appVersionName=$v in gradle.properties"
+            exit 1
+          fi
+
+      - name: Restore the release signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "::error::KEYSTORE_BASE64 secret is missing; refusing to publish a release signed with a throwaway key"
+            exit 1
+          else
+            echo "No signing secrets (e.g. a pull request): building with the debug key"
+          fi
 
       - uses: actions/setup-java@v4
         with:
@@ -34,16 +62,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
 
-      - name: Name the APK and compute checksum
+      - name: Name the APK, checksum it and record the signing certificate
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk dist/cor3-helper.apk
           cd dist
           sha256sum cor3-helper.apk | tee cor3-helper.apk.sha256
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+          "$apksigner" verify --print-certs cor3-helper.apk | tee cor3-helper.signing-cert.txt
 
       - name: Attest build provenance
         if: startsWith(github.ref, 'refs/tags/v')
@@ -63,4 +95,5 @@ jobs:
           files: |
             dist/cor3-helper.apk
             dist/cor3-helper.apk.sha256
+            dist/cor3-helper.signing-cert.txt
           generate_release_notes: true
